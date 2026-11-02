@@ -14,3 +14,7 @@ This repository is a minimal test project. No external dependencies are required
 ### Running tests
 
 There is currently no automated test suite. If tests are added in the future, document the commands required to run them here.
+
+## Contributing
+
+Contributions are welcome. Please open a pull request with a clear description of your changes.
