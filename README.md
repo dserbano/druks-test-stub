@@ -14,3 +14,5 @@ This repository is a minimal test project. No external dependencies are required
 ### Running tests
 
 There is currently no automated test suite. If tests are added in the future, document the commands required to run them here.
+
+Reviewer access restored: operator changes receive an independent review.
