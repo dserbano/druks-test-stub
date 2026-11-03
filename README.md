@@ -7,6 +7,10 @@
 
 ## Development setup
 
+- A
+- B
+- C
+
 ### Installing dependencies
 
 This repository is a minimal test project. No external dependencies are required for the current setup.
