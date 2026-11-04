@@ -19,3 +19,4 @@ Reviewer access restored: operator changes receive an independent review.
 test: merge-done
 test: t-l10
 test: jira-mcp-2
+test: 937-approve
