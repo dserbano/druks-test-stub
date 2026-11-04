@@ -17,3 +17,4 @@ There is currently no automated test suite. If tests are added in the future, do
 
 Reviewer access restored: operator changes receive an independent review.
 test: merge-done
+test: g6
