@@ -20,4 +20,4 @@ test: merge-done
 test: t-l10
 test: jira-mcp-2
 test: 937-approve
-test: report-changes
+test: report-changes.
