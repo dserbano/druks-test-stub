@@ -1,3 +1,2 @@
 gates:
   implementation_approval: human
-on_approval: merge
