@@ -15,4 +15,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       # main carries .ci/e2e-broken while the "red on the default branch too" case runs.
-      - run: if [ -f .ci/e2e-broken ]; then echo "FAIL: e2e is broken (.ci/e2e-broken)"; exit 1; fi
+      - run: |
+          if [ -f .ci/e2e-broken ]; then
+            echo "FAIL: e2e is broken (.ci/e2e-broken)"
+            exit 1
+          fi
