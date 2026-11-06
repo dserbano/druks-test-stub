@@ -20,3 +20,25 @@ jobs:
             echo "FAIL: e2e is broken (.ci/e2e-broken)"
             exit 1
           fi
+  external-lint:
+    runs-on: ubuntu-latest
+    permissions:
+      statuses: write
+    steps:
+      - uses: actions/checkout@v4
+      # Stands in for an outside CI service, which reports through a commit status, not a check run.
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          post() { gh api -X POST "repos/${{ github.repository }}/statuses/$SHA" -f context=external/lint -f state="$1" -f description="$2"; }
+          post pending "Linting notes"
+          sleep 30
+          for note in notes/*.txt; do
+            [ -e "$note" ] || continue
+            if ! head -n 1 "$note" | grep -q '^# '; then
+              post failure "$note must start with a title line beginning with '# '"
+              exit 0
+            fi
+          done
+          post success "Every note has a title"
