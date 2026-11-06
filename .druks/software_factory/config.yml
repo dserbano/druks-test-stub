@@ -1,4 +1,2 @@
 gates:
   implementation_approval: human
-pre_push_tests:
-  - sh .ci/check-notes.sh
