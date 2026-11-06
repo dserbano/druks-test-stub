@@ -1,2 +1,3 @@
 gates:
-  implementation_approval: human
+  implementation_approval: humanpre_push_tests:
+  - sh .ci/check-notes.sh
