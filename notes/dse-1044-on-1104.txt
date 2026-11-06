@@ -1,0 +1,5 @@
+# DRU-1044 on #1104
+
+Hello from the DRU-1044 test, after the rebase on #1104.
+
+Checked.
