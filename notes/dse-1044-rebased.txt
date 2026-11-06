@@ -1,0 +1,5 @@
+# DRU-1044 rebased test
+
+hello from the rebased DRU-1044 test
+
+Checked.
