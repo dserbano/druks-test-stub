@@ -25,4 +25,4 @@ test: s9
 test: x3
 test: x3-round2
 test: x5
-test: dru-1034 latest commit
+test: dru-1034 latest commit (reviewed)
