@@ -1,3 +1,5 @@
+# DRU-1044 extra test 3b
+
 hello from extra test 3b
 
 Throwaway note for DRU-1044 extra test 3b.
