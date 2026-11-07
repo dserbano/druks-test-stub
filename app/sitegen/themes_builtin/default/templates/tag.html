@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="{{ site.language }}">
+<head><meta charset="utf-8" /><title>Tag: {{ tag }} — {{ site.title }}</title></head>
+<body>
+<h1>Tag: {{ tag }}</h1>
+<ul>
+{% for page in pages %}
+<li><a href="{{ page.url }}">{{ page.title }}</a></li>
+{% endfor %}
+</ul>
+</body>
+</html>
