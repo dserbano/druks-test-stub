@@ -9,11 +9,37 @@
 
 ### Installing dependencies
 
-This repository is a minimal test project. No external dependencies are required for the current setup.
+The `app/tracker/` package depends on Jinja2 at runtime and `pytest` for
+development. Install both with:
+
+```
+pip install -e '.[dev]'
+```
 
 ### Running tests
 
-There is currently no automated test suite. If tests are added in the future, document the commands required to run them here.
+```
+pytest
+```
+
+The tracker test suite lives under `tests/tracker/`.
+
+### Tracker
+
+`app/tracker/` contains a complete project tracker: projects, tasks,
+subtasks, dependencies, assignees, sprints, labels, comments,
+full-text search, a burndown calculator, and a static HTML dashboard
+rendered with Jinja. See [docs/tracker/overview.md](docs/tracker/overview.md)
+for a tour, and the other pages under `docs/tracker/` for the data
+model, CLI, migrations, dashboard, and search.
+
+CLI:
+
+```
+python -m app.tracker migrate --db ./tracker.db
+python -m app.tracker seed --db ./tracker.db
+python -m app.tracker dashboard --db ./tracker.db --output dashboard.html
+```
 
 Reviewer access restored: operator changes receive an independent review.
 test: merge-done
