@@ -34,11 +34,24 @@ during build. Paths are preserved (so `static/img/logo.png` becomes
 
 ## Live reload
 
-If you want live reload to work in your theme, include the following
-right before `</body>`:
+Live reload is handled by the dev server, which injects a small
+`<script>` tag into every HTML response just before `</body>`. The
+script opens an `EventSource` connection to `/__sitegen/reload` and
+calls `location.reload()` when a `reload` event arrives.
+
+Your theme does not need to add anything — the injection is the
+transport, and it kicks in whenever your page has a `</body>` tag (or
+is appended if it does not). To opt a specific page out of reload,
+omit the `</body>` tag *and* ensure the snippet is not present in the
+page source.
+
+If you prefer to control the snippet's position yourself, include it
+verbatim in your template:
 
 ```html
-<script src="/__sitegen/reload.js" defer></script>
+<script>(function(){var es=new EventSource('/__sitegen/reload');
+es.addEventListener('reload',function(){location.reload();});})();</script>
 ```
 
-(The default theme does this automatically via `base.html`.)
+The injector is idempotent: pages that already contain the snippet
+byte-for-byte are served unchanged.

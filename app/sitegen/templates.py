@@ -31,7 +31,10 @@ class TemplateEngine:
         if _HAS_JINJA:
             self.env = jinja2.Environment(
                 loader=jinja2.FileSystemLoader([str(p) for p in self.search_dirs]),
-                autoescape=False,
+                autoescape=jinja2.select_autoescape(
+                    enabled_extensions=("html", "htm", "xml"),
+                    default_for_string=True,
+                ),
                 keep_trailing_newline=True,
             )
         else:
@@ -130,6 +133,11 @@ def _parse_tokens(tokens: List[str], pos: int, terminator: Optional[str] = None)
 
 def _resolve(expr: str, ctx: Mapping[str, Any]) -> Any:
     expr = expr.strip()
+    # Strip trailing Jinja-style filters — the fallback does not implement
+    # filters, and the two in use ("safe" and "escape") are no-ops in a
+    # fallback that doesn't autoescape anyway.
+    if "|" in expr:
+        expr = expr.split("|", 1)[0].strip()
     parts = expr.split(".")
     cur: Any
     if isinstance(ctx, Mapping):

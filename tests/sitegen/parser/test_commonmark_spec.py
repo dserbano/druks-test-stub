@@ -74,10 +74,41 @@ def test_spec_fixture_has_expected_volume():
 
 
 def test_vast_majority_of_spec_passes():
-    """Guard rail for the AC — the parser must pass a strong majority."""
+    """Guard rail for the AC — the parser must keep passing the spec
+    examples it claims to pass, with a tight margin so any regression
+    that xfails a previously-passing example is immediately visible.
+    """
     total = len(_SPEC)
     unsupported = len(EXPECTED_FAIL_EXAMPLES)
     supported = total - unsupported
-    assert supported / total >= 0.70, (
-        f"only {supported}/{total} examples pass, target is >= 70%"
+    # The current parser passes 465/652 cases. The gate is pinned just
+    # below that, so adding a single xfail without a corresponding
+    # parser improvement fails this test loudly.
+    assert supported / total >= 0.712, (
+        f"only {supported}/{total} examples pass, target is >= 71.2%"
+    )
+
+
+def test_xfail_list_matches_actual_failures():
+    """Second-order guard: every entry in ``EXPECTED_FAIL_EXAMPLES`` must
+    actually be a failure, and no xpass surprises creep in. This keeps
+    the xfail list honest — the only way to shrink it is to improve the
+    parser, not to silently xfail a previously-passing example.
+    """
+    actual_failing = set()
+    for ex in _SPEC:
+        try:
+            if render(ex["markdown"]) != ex["html"]:
+                actual_failing.add(ex["example"])
+        except Exception:
+            actual_failing.add(ex["example"])
+    # Allow the xfail list to be a (non-strict) superset of real
+    # failures — strict=False xfails in the parametrized run do not
+    # fail if they happen to pass, and tightening to an exact match
+    # would make unrelated small parser wins break this test. But
+    # every actual failure must appear in the list.
+    missing = actual_failing - set(EXPECTED_FAIL_EXAMPLES)
+    assert not missing, (
+        f"{len(missing)} newly failing examples not in EXPECTED_FAIL_EXAMPLES: "
+        f"{sorted(missing)[:20]}..."
     )

@@ -124,10 +124,25 @@ def build(
     theme = discover_theme(site.theme, src / site.themes_dir if (src / site.themes_dir).exists() else None)
 
     registry = registry or PluginRegistry()
+    plugin_module_paths: List[Path] = []
     if use_builtin_plugin:
         builtin_register(registry)
+        # Hash the built-in plugin module too — it ships as code and
+        # editing it must invalidate every page.
+        import app.sitegen.plugins as _builtin_plugins_mod
+        builtin_file = getattr(_builtin_plugins_mod, "__file__", None)
+        if builtin_file:
+            plugin_module_paths.append(Path(builtin_file))
     for plugin_path in site.plugins:
         load_plugin(plugin_path, registry)
+        try:
+            import importlib
+            mod = importlib.import_module(plugin_path)
+            mod_file = getattr(mod, "__file__", None)
+            if mod_file:
+                plugin_module_paths.append(Path(mod_file))
+        except Exception:
+            pass
 
     registry.invoke("before_build", site=site, src=src, out=out)
 
@@ -141,12 +156,16 @@ def build(
         content_files[page.rel] = p.read_bytes()
 
     # Incremental: compute global hash of templates/theme/plugins + config.
-    aux = []
-    aux.extend(theme.templates_dir.rglob("*")) if theme.templates_dir.exists() else None
-    aux.extend(theme.static_dir.rglob("*")) if theme.static_dir.exists() else None
+    aux: List[Path] = []
+    if theme.templates_dir.exists():
+        aux.extend(theme.templates_dir.rglob("*"))
+    if theme.static_dir.exists():
+        aux.extend(theme.static_dir.rglob("*"))
     if cfg_path.exists():
         aux.append(cfg_path)
-    # Include plugin modules by path if they exist on disk.
+    for mod_path in plugin_module_paths:
+        if mod_path.exists():
+            aux.append(mod_path)
     global_hash = hash_tree(aux)
 
     manifest_path = out / MANIFEST_NAME

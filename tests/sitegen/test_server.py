@@ -105,3 +105,95 @@ def test_make_handler_sets_dispatcher(tmp_path):
     cls = make_handler(tmp_path, d)
     assert cls.dispatcher is d
     assert cls.directory == str(tmp_path)
+
+
+def test_inject_reload_snippet_before_body_close():
+    from app.sitegen.server import inject_reload_snippet
+    html = b"<html><body><h1>hi</h1></body></html>"
+    out = inject_reload_snippet(html)
+    assert b"EventSource" in out
+    assert out.index(b"EventSource") < out.index(b"</body>")
+
+
+def test_inject_reload_snippet_is_idempotent():
+    from app.sitegen.server import inject_reload_snippet
+    html = b"<html><body></body></html>"
+    once = inject_reload_snippet(html)
+    twice = inject_reload_snippet(once)
+    assert once == twice
+
+
+def test_inject_reload_snippet_appends_when_no_body_close():
+    from app.sitegen.server import inject_reload_snippet
+    html = b"<html><p>no body tag</p>"
+    out = inject_reload_snippet(html)
+    assert out.endswith(RELOAD_SNIPPET.encode("utf-8"))
+
+
+def test_inject_reload_snippet_handles_uppercase_body():
+    from app.sitegen.server import inject_reload_snippet
+    html = b"<HTML><BODY>x</BODY></HTML>"
+    out = inject_reload_snippet(html)
+    assert b"EventSource" in out
+    assert out.index(b"EventSource") < out.lower().index(b"</body>")
+
+
+def test_built_pages_served_with_reload_script_injected(tmp_path):
+    """Integration-ish: a built HTML page served by the handler carries the
+    reload script even when the file on disk does not.
+    """
+    import io
+    from app.sitegen.server import make_handler
+    (tmp_path / "index.html").write_text(
+        "<html><body>hello</body></html>", encoding="utf-8"
+    )
+    d = ReloadDispatcher()
+    cls = make_handler(tmp_path, d)
+
+    captured = io.BytesIO()
+
+    class FakeReq:
+        def makefile(self, *a, **kw):
+            return io.BytesIO(b"")
+
+    class FakeHandler(cls):  # type: ignore[misc,valid-type]
+        def __init__(self):
+            # Don't go through BaseHTTPRequestHandler.__init__ — we just
+            # want to drive the HTML-serving path.
+            self.path = "/"
+            self.command = "GET"
+            self.directory = str(tmp_path)
+            self.wfile = captured
+            self.rfile = io.BytesIO(b"")
+            self.headers = {}
+            self.request_version = "HTTP/1.0"
+
+        def send_response(self, code, message=None):
+            captured.write(f"HTTP/1.0 {code}\r\n".encode("ascii"))
+
+        def send_header(self, k, v):
+            captured.write(f"{k}: {v}\r\n".encode("ascii"))
+
+        def end_headers(self):
+            captured.write(b"\r\n")
+
+        def log_message(self, *a, **kw):
+            pass
+
+    h = FakeHandler()
+    h.do_GET()
+    out = captured.getvalue()
+    assert b"EventSource" in out
+    assert b"hello" in out
+
+
+def test_resolve_html_path_rejects_traversal(tmp_path):
+    from app.sitegen.server import make_handler
+    cls = make_handler(tmp_path, ReloadDispatcher())
+
+    class _H(cls):  # type: ignore[misc,valid-type]
+        def __init__(self, path):
+            self.path = path
+            self.directory = str(tmp_path)
+
+    assert _H("/../etc/passwd")._resolve_html_path() is None

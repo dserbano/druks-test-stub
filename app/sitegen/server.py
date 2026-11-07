@@ -14,8 +14,10 @@ small so the reload *logic* is unit-testable.
 """
 from __future__ import annotations
 
+import posixpath
 import queue
 import threading
+import urllib.parse
 from dataclasses import dataclass, field
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -39,6 +41,24 @@ RELOAD_SNIPPET = (
     "es.addEventListener('reload',function(){location.reload();});"
     "})();</script>"
 )
+
+
+def inject_reload_snippet(html: bytes, snippet: str = RELOAD_SNIPPET) -> bytes:
+    """Return ``html`` with the SSE reload snippet inserted before ``</body>``.
+
+    Falls back to appending if no closing body tag is present. If the
+    snippet is already present (byte-equal) the html is returned
+    unchanged — injection is idempotent, which keeps the test for
+    "served HTML includes the reload script" stable across re-reads.
+    """
+    enc = snippet.encode("utf-8")
+    if enc in html:
+        return html
+    lower = html.lower()
+    idx = lower.rfind(b"</body>")
+    if idx == -1:
+        return html + enc
+    return html[:idx] + enc + html[idx:]
 
 
 class ReloadDispatcher:
@@ -102,7 +122,63 @@ class _InjectingHandler(SimpleHTTPRequestHandler):
     def do_GET(self):  # noqa: N802
         if self.path == RELOAD_PATH:
             return self._do_sse()
+        resolved = self._resolve_html_path()
+        if resolved is not None:
+            return self._serve_html_with_snippet(resolved)
         return super().do_GET()
+
+    def _resolve_html_path(self) -> Optional[Path]:
+        """Return a filesystem Path when this request maps to an HTML file.
+
+        Mirrors ``SimpleHTTPRequestHandler.translate_path`` for the
+        subset we care about: strip query/fragment, decode percent-
+        escapes, resolve against the configured directory, and apply
+        the "/dir/" → "/dir/index.html" rule. Any resolved path that
+        escapes ``self.directory`` returns ``None`` — the base handler
+        then takes over and applies its own protections.
+        """
+        path = self.path.split("?", 1)[0].split("#", 1)[0]
+        try:
+            path = urllib.parse.unquote(path, errors="surrogatepass")
+        except (UnicodeDecodeError, TypeError):
+            return None
+        trailing_slash = path.endswith("/")
+        path = posixpath.normpath(path)
+        while path.startswith("/"):
+            path = path[1:]
+        parts = [p for p in path.split("/") if p and p != "."]
+        if any(p == ".." for p in parts):
+            return None
+        fs = Path(self.directory, *parts) if parts else Path(self.directory)
+        if fs.is_dir() or trailing_slash:
+            fs = fs / "index.html"
+        try:
+            resolved = fs.resolve(strict=False)
+            root = Path(self.directory).resolve(strict=False)
+            resolved.relative_to(root)
+        except (ValueError, OSError):
+            return None
+        if fs.suffix.lower() in (".html", ".htm") and fs.is_file():
+            return fs
+        return None
+
+    def _serve_html_with_snippet(self, fs: Path) -> None:
+        try:
+            raw = fs.read_bytes()
+        except OSError:
+            self.send_error(404)
+            return
+        body = inject_reload_snippet(raw)
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        if self.command != "HEAD":
+            try:
+                self.wfile.write(body)
+            except (BrokenPipeError, ConnectionResetError):  # pragma: no cover
+                pass
 
     def _do_sse(self):
         self.send_response(200)

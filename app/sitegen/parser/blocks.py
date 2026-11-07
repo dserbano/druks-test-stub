@@ -394,8 +394,6 @@ def _consume_list_items(lines, i, end, lst: List, link_refs, footnotes, ordered:
             prev_blank = False
         item = ListItem(raw_lines=[])
         lst.children.append(item)
-        # First line content
-        first = " " * (len(indent_str)) + after if False else after
         item_lines = [after]
         i += 1
         while i < end:

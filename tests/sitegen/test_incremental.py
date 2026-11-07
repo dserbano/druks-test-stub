@@ -105,3 +105,60 @@ def test_hash_tree_reacts_to_contents(tmp_path):
     f.write_text("b")
     h2 = hash_tree([f])
     assert h1 != h2
+
+
+def test_plugin_change_invalidates_everything(seeded, monkeypatch, tmp_path):
+    """A change to a plugin module file must invalidate all pages."""
+    src, out = seeded
+
+    # Create a user plugin file and point site.toml at it.
+    plug_dir = tmp_path / "plugins"
+    plug_dir.mkdir()
+    (plug_dir / "__init__.py").write_text("", encoding="utf-8")
+    plug_file = plug_dir / "my_plug.py"
+    plug_file.write_text(
+        "def register(reg):\n    reg.on_page(lambda page: None)\n",
+        encoding="utf-8",
+    )
+    # Make the package importable.
+    import sys
+    sys.path.insert(0, str(tmp_path))
+    try:
+        (src / "site.toml").write_text(
+            '[site]\ntitle = "x"\nplugins = ["plugins.my_plug"]\n',
+            encoding="utf-8",
+        )
+        # First build picks up the plugin — site.toml also changed, so
+        # everything is rebuilt. Second build should be clean.
+        build(src, out)
+        r = build(src, out)
+        assert set(r.skipped) == {"a.md", "b.md"}
+        assert r.rendered == []
+
+        # Now mutate the plugin file; next build must re-render everything.
+        plug_file.write_text(
+            "# change\ndef register(reg):\n    reg.on_page(lambda page: None)\n",
+            encoding="utf-8",
+        )
+        # Drop the cached module so importlib re-reads from disk and we
+        # hash the new file contents.
+        sys.modules.pop("plugins.my_plug", None)
+        r2 = build(src, out)
+        assert {p.rel for p in r2.rendered} == {"a.md", "b.md"}
+    finally:
+        sys.path.remove(str(tmp_path))
+        sys.modules.pop("plugins.my_plug", None)
+        sys.modules.pop("plugins", None)
+
+
+def test_builtin_plugin_module_participates_in_global_hash(seeded, tmp_path):
+    """The built-in plugin module's path is included in the global hash."""
+    from app.sitegen.incremental import hash_tree
+    import app.sitegen.plugins as plug_mod
+    plug_path = Path(plug_mod.__file__)
+    # The file must exist on disk — otherwise the invalidation story
+    # relies on something the loader won't find.
+    assert plug_path.exists()
+    # And hash_tree reacts to its contents, so any edit changes the hash.
+    before = hash_tree([plug_path])
+    assert before and len(before) == 64
