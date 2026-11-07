@@ -15,6 +15,36 @@ This repository is a minimal test project. No external dependencies are required
 
 There is currently no automated test suite. If tests are added in the future, document the commands required to run them here.
 
+## Inventory app
+
+An inventory management FastAPI app lives under `app/inventory/`. It exposes REST endpoints for products, suppliers, warehouses, stock movements, purchase orders, and low-stock alerts, with CSV import and export for products and suppliers. Full design notes are in `app/inventory/ARCHITECTURE.md`.
+
+### Install dependencies
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -e '.[test]'
+```
+
+The runtime dependencies (`fastapi`, `sqlalchemy`, `pydantic`, `python-multipart`) are declared in `pyproject.toml`; `pytest` and `httpx` are the test extras.
+
+### Run the app
+
+```bash
+uvicorn --factory app.inventory.main:create_app
+```
+
+The app creates a SQLite database file (`inventory.db` by default) on startup. Point it elsewhere with `INVENTORY_DB_URL=sqlite:///./alt.db`.
+
+### Run the inventory test suite
+
+```bash
+pytest tests/inventory/
+```
+
+Each test uses an isolated in-memory SQLite database created by the `tests/inventory/conftest.py` fixtures, so tests do not share state.
+
 Reviewer access restored: operator changes receive an independent review.
 test: merge-done
 test: t-l10
