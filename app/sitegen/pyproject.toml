@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sitegen"
+version = "0.1.0"
+description = "From-scratch markdown static site generator"
+readme = "../../docs/sitegen/overview.md"
+requires-python = ">=3.11"
+authors = [{ name = "Druks test stub" }]
+dependencies = [
+    "Jinja2>=3.1",
+    "watchdog>=3.0",
+]
+
+[project.scripts]
+sitegen = "app.sitegen.cli:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[tool.setuptools.packages.find]
+where = ["../.."]
+include = ["app.sitegen*"]
