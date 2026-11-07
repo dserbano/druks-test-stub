@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Tracker Dashboard</title>
+<style>
+  body { font-family: -apple-system, system-ui, sans-serif; margin: 2rem; color: #222; }
+  h1, h2 { border-bottom: 1px solid #ddd; padding-bottom: .25rem; }
+  section { margin-bottom: 2.5rem; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { text-align: left; padding: .25rem .5rem; border-bottom: 1px solid #eee; }
+  .meta { color: #666; font-size: .9em; }
+</style>
+</head>
+<body>
+<h1 id="tracker-dashboard">Tracker dashboard</h1>
+<p class="meta">Generated {{ generated_at }} &middot; search term: <code>{{ search_term or "(none)" }}</code></p>
+
+<section id="projects">
+  <h2>Projects</h2>
+  {% if projects %}
+  <table>
+    <thead><tr><th>ID</th><th>Name</th><th>Description</th></tr></thead>
+    <tbody>
+    {% for project in projects %}
+      <tr>
+        <td>{{ project.id }}</td>
+        <td>{{ project.name }}</td>
+        <td>{{ project.description }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>No projects.</p>
+  {% endif %}
+</section>
+
+<section id="sprint-burndown">
+  <h2>Sprint burndown</h2>
+  {% if burndown_sprint %}
+  <p>Sprint: <strong>{{ burndown_sprint.name }}</strong>
+    ({{ burndown_sprint.start_date }} &rarr; {{ burndown_sprint.end_date }})</p>
+  <table>
+    <thead><tr><th>Day</th><th>Remaining</th><th>Completed</th></tr></thead>
+    <tbody>
+    {% for point in burndown %}
+      <tr>
+        <td>{{ point.day }}</td>
+        <td>{{ "%.2f"|format(point.remaining) }}</td>
+        <td>{{ "%.2f"|format(point.completed) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>No sprints configured.</p>
+  {% endif %}
+</section>
+
+<section id="tasks-per-assignee">
+  <h2>Open tasks per assignee</h2>
+  {% if assignees %}
+  <table>
+    <thead><tr><th>Assignee</th><th>Open tasks</th></tr></thead>
+    <tbody>
+    {% for row in assignees %}
+      <tr>
+        <td>{{ row.name }}</td>
+        <td>{{ row.open_count }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>No assignees.</p>
+  {% endif %}
+</section>
+
+<section id="search-results">
+  <h2>Search results</h2>
+  {% if search_hits %}
+  <ul>
+    {% for hit in search_hits %}
+    <li><strong>{{ hit.kind }}#{{ hit.rowid }}</strong>: {{ hit.snippet }} <span class="meta">(rank {{ "%.3f"|format(hit.rank) }})</span></li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p>No matches{% if search_term %} for <code>{{ search_term }}</code>{% endif %}.</p>
+  {% endif %}
+</section>
+
+</body>
+</html>
