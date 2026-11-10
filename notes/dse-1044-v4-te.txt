@@ -1,2 +1,2 @@
-# hello from test F
+# hello from test F (cleared)
 Checked.
