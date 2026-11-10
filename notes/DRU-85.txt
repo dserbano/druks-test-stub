@@ -1,0 +1,16 @@
+# DRU-85 — Connect OpenAI subscriptions with Codex device authorization
+
+Scope captured for this stub PR; the real implementation lives in czpython/druks PR #829.
+
+- OpenAI Codex device-authorization flow: the OpenAiProvider initiates a device-code
+  request, surfaces the verification URL and user_code to the operator, then polls the
+  token endpoint until the user approves or the code expires.
+- Redis-backed pending attempts: each in-flight device-auth attempt is stored in Redis,
+  keyed and scoped to (provider, Account), so concurrent attempts for the same account
+  on the same provider resolve to one pending entry and never leak across accounts.
+- VaultSecret reuse: once device auth succeeds, the resulting credentials land in the
+  existing VaultSecret storage, go through the same token refresh path the Anthropic
+  flow uses, and are delivered to the sandbox through the existing sandbox-delivery
+  mechanism — no parallel storage, refresh, or delivery code path is introduced.
+
+Checked.
