@@ -78,6 +78,8 @@ jobs:
           post() { gh api -X POST "repos/${{ github.repository }}/statuses/$SHA" -f context=external/compliance -f state="$1" -f description="$2"; }
           if git diff --name-only HEAD^1 HEAD | grep -q '^notes/dse-1044-v4-ta.txt$'; then
             post failure "Compliance has not cleared notes/dse-1044-v4-ta.txt"
+          elif git diff --name-only HEAD^1 HEAD | grep -q '^notes/dse-1044-v4-te.txt$' && ! head -n 1 notes/dse-1044-v4-te.txt | grep -q '(cleared)$'; then
+            post failure "The title line of notes/dse-1044-v4-te.txt must end with (cleared)"
           else
             post success "Nothing to clear"
           fi
