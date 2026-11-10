@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "druks-shop"
+version = "0.1.0"
+description = "Read-only catalog slice of the shop backend (DSE-98)."
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi",
+    "sqlalchemy",
+    "pydantic",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "hypothesis",
+    "httpx",
+]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/shop"]
