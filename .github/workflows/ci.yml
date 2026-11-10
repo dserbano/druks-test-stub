@@ -20,6 +20,12 @@ jobs:
             echo "FAIL: e2e is broken (.ci/e2e-broken)"
             exit 1
           fi
+  # Runs only once notes and e2e finish, so GitHub creates its check run in a second wave.
+  wave:
+    needs: [notes, e2e]
+    runs-on: ubuntu-latest
+    steps:
+      - run: sleep 45
   external-lint:
     runs-on: ubuntu-latest
     permissions:
