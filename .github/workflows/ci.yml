@@ -20,6 +20,19 @@ jobs:
             echo "FAIL: e2e is broken (.ci/e2e-broken)"
             exit 1
           fi
+  length:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          for note in notes/*.txt; do
+            [ -e "$note" ] || continue
+            lines=$(wc -l < "$note")
+            if [ "$lines" -gt 2 ]; then
+              echo "FAIL: $note has $lines lines. A note has at most 2: its '# ' title and 'Checked.'"
+              exit 1
+            fi
+          done
   # Runs only once notes and e2e finish, so GitHub creates its check run in a second wave.
   wave:
     needs: [notes, e2e]
