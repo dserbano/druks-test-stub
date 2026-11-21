@@ -1,2 +1,2 @@
-# CONFLICT D
+# CONFLICT D (edited by D)
 Checked.
