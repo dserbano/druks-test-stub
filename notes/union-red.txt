@@ -1,0 +1,4 @@
+Red CI test
+second line
+third line
+Checked.
