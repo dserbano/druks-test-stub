@@ -1,0 +1,5 @@
+# MATRIX R
+This note documents the Matrix R exercise on the agent branch.
+It intentionally spans more than two lines to exercise the length lint in CI.
+The final acknowledgement follows on the next line as required.
+Checked.
