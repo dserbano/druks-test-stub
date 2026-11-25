@@ -1,2 +1,2 @@
-# Matrix C extra
+# Matrix C extra notes
 Checked.
