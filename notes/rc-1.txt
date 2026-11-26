@@ -1,0 +1,2 @@
+# Nightly RC smoke check
+Checked.
