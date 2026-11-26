@@ -1,2 +1,2 @@
-# Release candidate smoke pass for the first nightly rebuild
+# Nightly RC smoke check
 Checked.
