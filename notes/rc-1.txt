@@ -1,0 +1,2 @@
+# Release candidate smoke pass for the first nightly rebuild
+Checked.
