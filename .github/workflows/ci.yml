@@ -96,3 +96,42 @@ jobs:
           if git diff --name-only HEAD^1 HEAD | grep -q '^notes/dse-1044-v4-td.txt$'; then
             sleep 3900
           fi
+  # Rules for the overnight test run. Each does nothing unless a note with its name exists.
+  title:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          for note in notes/rc-*.txt; do
+            [ -e "$note" ] || continue
+            title=$(head -n 1 "$note")
+            if [ "${#title}" -gt 24 ]; then
+              echo "FAIL: the title of $note has ${#title} characters. A title has at most 24."
+              exit 1
+            fi
+          done
+  flaky:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          for note in notes/flaky-*.txt; do
+            [ -e "$note" ] || continue
+            if [ "$GITHUB_RUN_ATTEMPT" -lt 2 ]; then
+              echo "FAIL: $note hit a flaky check on attempt $GITHUB_RUN_ATTEMPT"
+              exit 1
+            fi
+          done
+  token:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          for note in notes/token-*.txt; do
+            [ -e "$note" ] || continue
+            # The expected value is this run's id, which nobody can write into a file in advance.
+            if ! head -n 1 "$note" | grep -qxF "# token: $GITHUB_RUN_ID"; then
+              echo "FAIL: $note does not carry the expected token."
+              exit 1
+            fi
+          done
